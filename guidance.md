@@ -2,7 +2,7 @@
 
 ## Current scope
 - Added a lightweight TypeScript SDK wrapper for Binance Futures (UM by default) with REST and WebSocket helpers.
-- SDK lives in `src/` and is re-exported via `index.ts` for direct imports from the package root.
+- SDK lives in `binance-sdk/` (standalone folder) and is re-exported via `index.ts` for direct imports from the package root.
 
 ## Setup and usage
 - Configure credentials via env vars `BINANCE_API_KEY` and `BINANCE_API_SECRET`. Pass `apiKey`/`apiSecret` to `BinanceRestClient` only via runtime config, not code or repo files.
@@ -41,3 +41,5 @@
 
 ## Work log
 - Initialized SDK scaffold, added REST client with signing, WebSocket helper, and documentation/README updates (this task). Update this file with future changes or new setup steps.
+- Reorganized SDK into `binance-sdk/` folder and updated imports/docs to match (current task).
+- Added DOM typings via `tsconfig.json` (`lib: ["ESNext","DOM","DOM.Iterable"]`, `types: ["bun-types"]`) to resolve fetch/WebSocket/AbortController typing issues.

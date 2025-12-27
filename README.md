@@ -14,10 +14,15 @@ Binance Futures (UM by default) trading SDK built with TypeScript/Bun. It wraps 
    - `BINANCE_API_KEY=...`
    - `BINANCE_API_SECRET=...`
 3. Use testnet unless you intentionally want mainnet trading.
+4. SDK source now lives in `binance-sdk/`; import from there or continue importing from the package root re-export.
 
 ## Usage
 ```ts
-import { BinanceRestClient, BinanceWebSocketClient } from "ai-trading-agent";
+// Import directly from the SDK folder within this project
+import { BinanceRestClient, BinanceWebSocketClient } from "./binance-sdk";
+
+// or, if consumed as a package entry point:
+// import { BinanceRestClient, BinanceWebSocketClient } from "ai-trading-agent";
 
 // REST client (testnet example)
 const client = new BinanceRestClient({
