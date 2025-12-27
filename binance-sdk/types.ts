@@ -111,3 +111,17 @@ export interface WebSocketHandlers {
   onError?: (err: Event | ErrorEvent) => void;
   onClose?: (ev: CloseEvent) => void;
 }
+
+export interface Candlestick {
+  openTime: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  closeTime: number;
+  quoteAssetVolume: number;
+  numberOfTrades: number;
+  takerBuyBaseAssetVolume: number;
+  takerBuyQuoteAssetVolume: number;
+}
