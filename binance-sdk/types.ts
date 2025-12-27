@@ -1,6 +1,6 @@
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
-export type OrderSide = "BUY" | "SELL";
+export type OrderSide = "BUY" | "SELL" | string;
 export type PositionSide = "BOTH" | "LONG" | "SHORT";
 export type TimeInForce = "GTC" | "IOC" | "FOK" | "GTX";
 export type WorkingType = "MARK_PRICE" | "CONTRACT_PRICE";
@@ -90,6 +90,19 @@ export interface FundingRateParams extends RequestParams {
   startTime?: number;
   endTime?: number;
   limit?: number;
+}
+
+export interface PositionRiskParams extends RequestParams {
+  symbol?: string;
+  pair?: string;
+  recvWindow?: number;
+}
+
+export interface ClosePositionParams extends RequestParams {
+  symbol: string;
+  quantity?: number | string;
+  positionSide?: PositionSide;
+  recvWindow?: number;
 }
 
 export interface WebSocketHandlers {

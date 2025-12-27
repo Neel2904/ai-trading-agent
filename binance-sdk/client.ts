@@ -10,7 +10,9 @@ import {
   type CancelOrderRequest,
   type FundingRateParams,
   type KlineParams,
+  type ClosePositionParams,
   type NewOrderRequest,
+  type PositionRiskParams,
   type QueryOrderRequest,
   type RequestConfig,
   type RequestParams,
@@ -108,7 +110,7 @@ export class BinanceRestClient {
     return this.request("GET", "/fapi/v2/balance", params, { auth: true });
   }
 
-  getPositionRisk(params: RequestParams = {}) {
+  getPositionRisk(params: PositionRiskParams = {}) {
     return this.request("GET", "/fapi/v2/positionRisk", params, { auth: true });
   }
 
@@ -146,6 +148,67 @@ export class BinanceRestClient {
 
   cancelAllOpenOrders(params: { symbol: string; recvWindow?: number }) {
     return this.request("DELETE", "/fapi/v1/allOpenOrders", params, { auth: true });
+  }
+
+  /**
+   * Convenience: close an existing position with a reduce-only market order.
+   * If quantity is omitted, it fetches current position size via getPositionRisk.
+   */
+  async closePosition({
+    symbol,
+    quantity,
+    positionSide,
+    recvWindow,
+  }: ClosePositionParams): Promise<unknown> {
+    let closeQty = quantity;
+    let side = positionSide === "SHORT" ? "BUY" : "SELL";
+    let effectivePositionSide = positionSide;
+
+    if (closeQty === undefined || effectivePositionSide === undefined) {
+      const positions = await this.getPositionRisk({ symbol, recvWindow });
+      const positionArray = Array.isArray(positions) ? positions : [positions];
+      const match = positionArray.find(
+        (p: any) =>
+          p &&
+          typeof p === "object" &&
+          (p.symbol === symbol || p.symbol === symbol.toUpperCase()),
+      );
+
+      const posAmt = Number((match as any)?.positionAmt ?? 0);
+      if (!posAmt) {
+        throw new Error(`No open position found for ${symbol}`);
+      }
+
+      effectivePositionSide =
+        effectivePositionSide ??
+        (typeof (match as any)?.positionSide === "string"
+          ? (match as any).positionSide
+          : "BOTH");
+
+      if (closeQty === undefined) {
+        closeQty = Math.abs(posAmt);
+      }
+
+      if (effectivePositionSide === "BOTH") {
+        side = posAmt > 0 ? "SELL" : "BUY";
+      } else {
+        side = effectivePositionSide === "SHORT" ? "BUY" : "SELL";
+      }
+    }
+
+    const orderPayload: NewOrderRequest = {
+      symbol,
+      side,
+      type: "MARKET",
+      positionSide: effectivePositionSide,
+      quantity: closeQty!,
+      ...(effectivePositionSide && effectivePositionSide !== "BOTH"
+        ? { positionSide: effectivePositionSide }
+        : {}),
+      ...(recvWindow ? { recvWindow } : {}),
+    };
+
+    return this.placeOrder(orderPayload);
   }
 
   /**

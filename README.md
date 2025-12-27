@@ -46,7 +46,29 @@ const wsClient = new BinanceWebSocketClient({ testnet: true });
 const socket = wsClient.connect(["btcusdt@bookTicker", "ethusdt@aggTrade"], {
   onMessage: (event) => console.log(event.data),
 });
+
+// Close an open position (reduce-only market). Quantity omitted -> auto-detects current size.
+await client.closePosition({ symbol: "BTCUSDT" });
 ```
+
+## LLM (Ollama) setup
+- Configure `OLLAMA_API_KEY` in `.env` (already present) and optionally `OLLAMA_HOST` to point at your Ollama server; defaults to `http://127.0.0.1:11434`.
+- Default Ollama client lives in `llm/index.ts` and expects a single model name (env `OLLAMA_MODEL`, default `llama3`). Update the env var to the exact model you want to use.
+- Basic chat example:
+  ```ts
+  import { ollama } from "./llm";
+
+  const chat = await ollama.chat({
+    messages: [
+      { role: "system", content: "You are a trading research assistant." },
+      { role: "user", content: "Summarize BTCUSDT market drivers today." },
+    ],
+  });
+
+  console.log("Full reply:", chat.message.content);
+  ```
+- For single prompts, use `ollama.generate({ prompt: "..." })`; list available models with `ollama.listModels()`.
+- Ensure the referenced model is installed locally (`ollama pull llama3`, etc.).
 
 ## Notes
 - Secrets are never logged; avoid committing `.env` or credentials.
