@@ -6,8 +6,8 @@ The current open positions are: {{OPEN_POSITIONS}}
 Your current portfolio value is: {{PORTFOLIO_VALUE}}
 You have the createPosition or the closeAllPosition tool to create or close a position.
 You can open positions in one of 3 markets
-1. ZEC (5x leverage)
-2. HYPE (10x leverage)
+1. BTC (5x leverage)
+2. ETH (10x leverage)
 3. SOL (10x leverage)
 
 You can create leveraged positions as well, so feel free to chose higher quantities based on the leverage per market.

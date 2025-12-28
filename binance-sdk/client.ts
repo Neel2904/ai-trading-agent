@@ -12,6 +12,7 @@ import {
   type KlineParams,
   type ClosePositionParams,
   type NewOrderRequest,
+  type PositionRisk,
   type PositionRiskParams,
   type QueryOrderRequest,
   type RequestConfig,
@@ -111,7 +112,19 @@ export class BinanceRestClient {
   }
 
   getPositionRisk(params: PositionRiskParams = {}) {
-    return this.request("GET", "/fapi/v2/positionRisk", params, { auth: true });
+    return this.request<PositionRisk[]>("GET", "/fapi/v2/positionRisk", params, { auth: true });
+  }
+
+  /**
+   * Fetch all open positions (filters out zero-sized positions).
+   */
+  async getOpenPositions(params: PositionRiskParams = {}): Promise<PositionRisk[]> {
+    const positions = await this.getPositionRisk(params);
+    const list = Array.isArray(positions) ? positions : [positions];
+    return list.filter((pos) => {
+      const amt = Number((pos as any)?.positionAmt ?? 0);
+      return Number.isFinite(amt) && amt !== 0;
+    });
   }
 
   getIncomeHistory(params: RequestParams = {}) {

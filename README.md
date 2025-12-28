@@ -41,6 +41,9 @@ await client.placeOrder({
   quantity: 0.001,
 });
 
+// Get currently open positions (non-zero size only)
+const openPositions = await client.getOpenPositions();
+
 // WebSocket (combined stream)
 const wsClient = new BinanceWebSocketClient({ testnet: true });
 const socket = wsClient.connect(["btcusdt@bookTicker", "ethusdt@aggTrade"], {

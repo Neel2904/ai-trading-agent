@@ -4,6 +4,8 @@ export interface ChatMessage {
   role: ChatRole;
   content: string;
   images?: string[];
+  tool_call_id?: string;
+  tool_calls?: ToolCall[];
 }
 
 export interface OllamaOptions {
@@ -30,6 +32,8 @@ export interface ChatRequest {
   messages: ChatMessage[];
   model?: string;
   options?: OllamaOptions;
+  tools?: OllamaTool[];
+  toolChoice?: ToolChoice;
 }
 
 export interface GenerateRequest {
@@ -60,4 +64,32 @@ export interface OllamaModelSummary {
 
 export interface ModelListResponse {
   models: OllamaModelSummary[];
+}
+
+export type ToolChoice =
+  | "auto"
+  | "none"
+  | {
+      type: "function";
+      function: {
+        name: string;
+      };
+    };
+
+export interface ToolCall {
+  id?: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+export interface OllamaTool {
+  type: "function";
+  function: {
+    name: string;
+    description?: string;
+    parameters?: Record<string, unknown>;
+  };
 }

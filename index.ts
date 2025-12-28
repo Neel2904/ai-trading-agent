@@ -1,24 +1,21 @@
 import { BinanceRestClient } from "./binance-sdk";
+import { ollama } from "./llm";
+import { PROMPT } from "./src/prompt";
 
 async function main() {
-  const symbol = process.env.BINANCE_SYMBOL ?? "BTCUSDT";
-  const now = Date.now();
-
-  const client = new BinanceRestClient({
-    baseUrl: process.env.BINANCE_BASE_URL,
-    apiKey: process.env.BINANCE_API_KEY,
-    apiSecret: process.env.BINANCE_API_SECRET,
-  });
-
-  const klines = await client.getKlines({
-    symbol,
-    interval: "1m",
-    startTime: now - 60 * 60 * 1000,
-    endTime: now,
-  });
-
-  console.log(`Fetched ${Array.isArray(klines) ? klines.length : 0} candles for ${symbol} (last 1h, 1m).`);
-  console.log(klines);
+  const response = ollama.chat({
+    model: "llama2",
+    messages: [
+      {
+        role: "system",
+        content: "You are an expert trader. You were given $1000 dollars to trade with. You are trading on the crypto market. You are given the following information.",
+      },
+      {
+        role: "user",
+        content: PROMPT,
+      },
+    ],
+  })
 }
 
 if (import.meta.main) {

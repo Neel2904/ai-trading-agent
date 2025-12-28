@@ -98,6 +98,23 @@ export interface PositionRiskParams extends RequestParams {
   recvWindow?: number;
 }
 
+export interface PositionRisk {
+  symbol: string;
+  positionAmt: string;
+  positionSide?: PositionSide;
+  entryPrice?: string;
+  markPrice?: string;
+  unRealizedProfit?: string;
+  liquidationPrice?: string;
+  leverage?: string;
+  marginType?: string;
+  isolatedMargin?: string;
+  isolatedWallet?: string;
+  notional?: string;
+  updateTime?: number;
+  [key: string]: string | number | boolean | undefined;
+}
+
 export interface ClosePositionParams extends RequestParams {
   symbol: string;
   quantity?: number | string;

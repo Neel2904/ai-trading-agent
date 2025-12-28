@@ -46,3 +46,4 @@
 - Added `closePosition` convenience method that fetches current position size (via `getPositionRisk`) when quantity is omitted and submits a reduce-only market order to flatten exposure.
 - Added Ollama client scaffolding with multi-model aliases (`llm/`) plus README usage notes; streaming removed for simpler usage.
 - Ollama defaults now use a single model name from `OLLAMA_MODEL` (default `llama3`) with no aliases.
+- Added `getOpenPositions` helper to surface only non-zero USDM positions (wraps `/fapi/v2/positionRisk`).

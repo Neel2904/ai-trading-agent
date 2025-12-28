@@ -37,6 +37,8 @@ export class OllamaClient {
       messages: params.messages,
       stream: false,
       options: this.mergeOptions(model.options, params.options),
+      ...(params.tools ? { tools: params.tools } : {}),
+      ...(params.toolChoice ? { tool_choice: params.toolChoice } : {}),
     };
     return this.post<OllamaChatResponse>("/api/chat", payload);
   }
