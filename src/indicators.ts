@@ -1,21 +1,19 @@
 // @params{period} - The period for which the EMA is being calculated
 
-import type { Candlestick } from "../binance-sdk";
+import type { RawCandlestick } from "../binance-sdk";
+import { binanceClient } from "./binanceConfig";
+import { getOpenClose } from "./utils";
 
 export function getEma(prices: number[], period: number): number[] {
   const multiplier = 2 / (period + 1);
-
   if (prices.length < period) {
     throw new Error("Not enough prices provided");
   }
 
   // Calculate initial SMA
   let sma = 0;
-  for (let i = 0; i < period; i++) {
-    sma += (prices[i] ?? 0);
-  }
+  for (let i = 0; i < period; i++) sma += (prices[i] ?? 0);
   sma /= period;
-
   const emas = [sma];
 
   // Calculate EMA for remaining prices
@@ -27,19 +25,36 @@ export function getEma(prices: number[], period: number): number[] {
   return emas;
 }
 
-export function getMidPrices(candlesticks: Candlestick[]) {
-  return candlesticks.map(({ open, close }) => Number(((open + close) / 2).toFixed(3)));
+export function getMidPrices(candlesticks: RawCandlestick[]) {
+  return candlesticks.map((candlestick) => {
+    const { open, close } = getOpenClose(candlestick);
+    return Number(((open + close) / 2).toFixed(3));
+  });
 }
 
 // macd => ema12 = 38 points, ema26 = 24 points
 export function getMacd(prices: number[]) {
-
   const ema26 = getEma(prices, 26); // [].length = 24
   let ema12 = getEma(prices, 12); // [].length = 38
-
   ema12 = ema12.slice(-ema26.length);
-
-  console.log(ema12.length, ema26.length);
   const macd = ema12.map((_, index) => (ema12[index] ?? 0) - (ema26[index] ?? 0));
   return macd
+}
+
+export const getIndicators = async (duration: "1m" | "5m" | "4h") => {
+  const klines = await binanceClient.getKlines({
+    symbol: "BTCUSDT",
+    interval: duration,
+    limit: duration === "1m" ? 120 : 40,
+  })
+
+  const midPrices = getMidPrices(klines);
+  const macd = getMacd(midPrices).slice(-10);
+  const ema20s = getEma(midPrices, 20);
+
+  return {
+    midPrices: midPrices.slice(-10).map(x => Number(x.toFixed(3))),
+    macd: macd.slice(-10).map(x => Number(x.toFixed(3))),
+    ema20s: ema20s.slice(-10).map(x => Number(x.toFixed(3))),
+  }
 }

@@ -19,6 +19,7 @@ import {
   type RequestConfig,
   type RequestParams,
   type TradesParams,
+  type Candlestick,
 } from "./types";
 import { buildQuery, isJsonResponse, signPayload, withTimestamp } from "./utils";
 
@@ -73,7 +74,7 @@ export class BinanceRestClient {
     return this.request("GET", "/fapi/v1/aggTrades", params);
   }
 
-  getKlines(params: KlineParams) {
+  getKlines(params: KlineParams): Promise<Candlestick[]> {
     return this.request("GET", "/fapi/v1/klines", params);
   }
 
@@ -189,6 +190,8 @@ export class BinanceRestClient {
       );
 
       const posAmt = Number((match as any)?.positionAmt ?? 0);
+      console.log({ posAmt });
+
       if (!posAmt) {
         throw new Error(`No open position found for ${symbol}`);
       }

@@ -204,3 +204,5 @@ export interface Candlestick {
   takerBuyBaseAssetVolume: number;
   takerBuyQuoteAssetVolume: number;
 }
+
+export type RawCandlestick = Candlestick | (number | string)[];
