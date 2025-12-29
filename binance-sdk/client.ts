@@ -6,6 +6,7 @@ import {
 import { BinanceError } from "./errors";
 import {
   type BinanceClientOptions,
+  type AccountInformation,
   type BookDepthParams,
   type CancelOrderRequest,
   type FundingRateParams,
@@ -104,7 +105,7 @@ export class BinanceRestClient {
    * Private endpoints (signature)
    */
   getAccountInformation(params: RequestParams = {}) {
-    return this.request("GET", "/fapi/v2/account", params, { auth: true });
+    return this.request<AccountInformation>("GET", "/fapi/v2/account", params, { auth: true });
   }
 
   getBalances(params: RequestParams = {}) {

@@ -81,7 +81,7 @@ export interface ToolCall {
   type: "function";
   function: {
     name: string;
-    arguments: string;
+    arguments: string | Record<string, unknown>;
   };
 }
 

@@ -4,7 +4,7 @@ import {
   DEFAULT_USDM_TESTNET_WS_URL,
   DEFAULT_USDM_WS_URL,
 } from "./constants";
-import { WebSocketHandlers } from "./types";
+import type { WebSocketHandlers } from "./types";
 
 type Market = "um" | "cm";
 

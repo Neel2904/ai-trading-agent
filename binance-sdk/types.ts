@@ -115,6 +115,68 @@ export interface PositionRisk {
   [key: string]: string | number | boolean | undefined;
 }
 
+export interface FuturesAccountAsset {
+  asset: string;
+  walletBalance: string;
+  unrealizedProfit: string;
+  marginBalance: string;
+  maintMargin: string;
+  initialMargin: string;
+  positionInitialMargin: string;
+  openOrderInitialMargin: string;
+  crossWalletBalance: string;
+  crossUnPnl: string;
+  availableBalance: string;
+  maxWithdrawAmount: string;
+  marginAvailable?: boolean;
+  updateTime: number;
+}
+
+export interface FuturesAccountPosition {
+  symbol: string;
+  initialMargin: string;
+  maintMargin: string;
+  unrealizedProfit: string;
+  positionInitialMargin: string;
+  openOrderInitialMargin: string;
+  leverage: string;
+  isolated: boolean;
+  entryPrice: string;
+  maxNotional: string;
+  positionSide: PositionSide;
+  positionAmt: string;
+  updateTime: number;
+  notional?: string;
+  isolatedWallet?: string;
+  bidNotional?: string;
+  askNotional?: string;
+  breakEvenPrice?: string;
+}
+
+export interface AccountInformation {
+  feeTier: number;
+  canTrade: boolean;
+  canDeposit: boolean;
+  canWithdraw: boolean;
+  updateTime: number;
+  totalInitialMargin: string;
+  totalMaintMargin: string;
+  totalWalletBalance: string;
+  totalUnrealizedProfit: string;
+  totalMarginBalance: string;
+  totalPositionInitialMargin: string;
+  totalOpenOrderInitialMargin: string;
+  totalCrossWalletBalance: string;
+  totalCrossUnPnl: string;
+  availableBalance: string;
+  maxWithdrawAmount: string;
+  assets: FuturesAccountAsset[];
+  positions: FuturesAccountPosition[];
+  accountAlias?: string;
+  totalAccountValue?: string;
+  multiAssetsMargin?: boolean;
+}
+
 export interface ClosePositionParams extends RequestParams {
   symbol: string;
   quantity?: number | string;

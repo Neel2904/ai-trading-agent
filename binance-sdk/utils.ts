@@ -1,5 +1,5 @@
 import { createHmac } from "crypto";
-import { RequestParams } from "./types";
+import type { RequestParams } from "./types";
 
 export function normalizeValue(value: string | number | boolean): string {
   if (typeof value === "boolean") {
