@@ -181,17 +181,14 @@ export class BinanceRestClient {
 
     if (closeQty === undefined || effectivePositionSide === undefined) {
       const positions = await this.getPositionRisk({ symbol, recvWindow });
+      console.log({ positions });
+
       const positionArray = Array.isArray(positions) ? positions : [positions];
-      const match = positionArray.find(
-        (p: any) =>
-          p &&
-          typeof p === "object" &&
-          (p.symbol === symbol || p.symbol === symbol.toUpperCase()),
+      const match = positionArray.find((p: any) => p && typeof p === "object" &&
+        (p.symbol === symbol || p.symbol === symbol.toUpperCase()),
       );
 
       const posAmt = Number((match as any)?.positionAmt ?? 0);
-      console.log({ posAmt });
-
       if (!posAmt) {
         throw new Error(`No open position found for ${symbol}`);
       }

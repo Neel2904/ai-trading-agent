@@ -11,6 +11,8 @@ async function main() {
     tools,
   });
 
+  console.log({ response: chatResponse.message.content });
+
   if (chatResponse.message.tool_calls?.length) {
     const toolMessages: ChatMessage[] = [];
     for (const call of chatResponse.message.tool_calls) {
@@ -40,4 +42,4 @@ mainWithGlobalErrorCatch();
 setInterval(() => {
   console.log("Running main loop...", ++timer);
   mainWithGlobalErrorCatch()
-}, 1000 * 60 * 5); // every 5 minutes
+}, 1000 * 60 * 2); // every 5 minutes
