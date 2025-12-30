@@ -1,25 +1,53 @@
 import type { ClosePositionParams, NewOrderRequest } from "../binance-sdk";
-import type { OllamaTool, ToolCall } from "../llm/types";
+import type { OpenRouterTool, ToolCall } from "../llm/types";
 import { binanceClient } from "./binanceConfig";
 
 type PlaceOrderArgs = Pick<
   NewOrderRequest,
   "symbol" | "side" | "type" | "quantity" | "price" | "timeInForce" | "positionSide"
->;
+> & { reduceOnly?: boolean };
 
 const toolHandlers = {
   async placeOrder(args: PlaceOrderArgs) {
+    const symbol = (args.symbol ?? "").toString().trim().toUpperCase();
+    if (!symbol) {
+      throw new Error("symbol is required for placeOrder");
+    }
+
+    const side = (args.side ?? "").toString().toUpperCase();
+    if (side !== "BUY" && side !== "SELL") {
+      throw new Error("side must be BUY or SELL");
+    }
+
+    const quantity = Number(args.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      throw new Error("quantity must be a positive number");
+    }
+
+    const type = (args.type ?? "MARKET") as NewOrderRequest["type"];
+    const reduceOnly = args.reduceOnly === true;
+
+    const openPositions = await binanceClient.getOpenPositions();
+    const hasOpenPosition =
+      Array.isArray(openPositions) &&
+      openPositions.some((pos) => Number(pos.positionAmt ?? 0) !== 0);
+
+    if (hasOpenPosition && !reduceOnly) {
+      throw new Error("An open position already exists. Close it before opening a new one to avoid stacking exposure.");
+    }
+
     const order: NewOrderRequest = {
-      symbol: args.symbol,
-      side: args.side,
-      type: args.type ?? "MARKET",
-      quantity: args.quantity,
+      symbol,
+      side,
+      type,
+      quantity,
+      ...(reduceOnly ? { reduceOnly: true } : {}),
       ...(args.positionSide ? { positionSide: args.positionSide } : {}),
       ...(args.price ? { price: args.price } : {}),
-      ...(args.type === "LIMIT" ? { timeInForce: args.timeInForce ?? "GTC" } : {}),
+      ...(type === "LIMIT" ? { timeInForce: args.timeInForce ?? "GTC" } : {}),
     };
 
-    if (order.type === "LIMIT" && order.price === undefined) {
+    if (type === "LIMIT" && order.price === undefined) {
       throw new Error("price is required for LIMIT orders");
     }
 
@@ -70,7 +98,7 @@ export async function executeToolCall(call: ToolCall) {
   return handler(args);
 }
 
-export const tools: OllamaTool[] = [
+export const tools: OpenRouterTool[] = [
   {
     type: "function",
     function: {
@@ -88,6 +116,15 @@ export const tools: OllamaTool[] = [
             description: "Order type (defaults to MARKET if omitted)",
           },
           price: { type: "number", description: "Limit price (required when type=LIMIT)" },
+          positionSide: {
+            type: "string",
+            enum: ["BOTH", "LONG", "SHORT"],
+            description: "Optional explicit side (useful when hedge mode is enabled)",
+          },
+          reduceOnly: {
+            type: "boolean",
+            description: "Set true to ensure the order only reduces an existing position",
+          },
         },
         required: ["symbol", "side", "quantity", "type"],
       },
@@ -105,6 +142,11 @@ export const tools: OllamaTool[] = [
           quantity: {
             type: "number",
             description: "Quantity to close; omit to close the full detected position",
+          },
+          positionSide: {
+            type: "string",
+            enum: ["BOTH", "LONG", "SHORT"],
+            description: "Optional explicit side (useful when hedge mode is enabled)",
           },
         },
         required: ["symbol"],

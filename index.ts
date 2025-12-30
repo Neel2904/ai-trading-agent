@@ -1,29 +1,71 @@
-import { ollama } from "./llm";
-import type { ChatMessage } from "./llm/types";
-import { filledPrompt } from "./src/prompt";
-import { executeToolCall, tools } from "./src/tools";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { streamText } from "ai";
+import { binanceClient } from "./src/binanceConfig";
+import z from "zod";
+import { buildFilledPrompt } from "./src/prompt";
+
+globalThis.AI_SDK_LOG_WARNINGS = false;
+export const MARKET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"] as const;
+type MarketSymbol = (typeof MARKET_SYMBOLS)[number];
 
 async function main() {
-  const message: ChatMessage[] = [{ role: "user", content: filledPrompt }];
-  const chatResponse = await ollama.chat({
-    model: "deepseek-v3.2",
-    messages: message,
-    tools,
-  });
+  const openRouter = createOpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY!,
+  })
 
-  console.log({ response: chatResponse.message.content });
+  const prompt = await buildFilledPrompt();
+  const { textStream } = streamText({
+    model: openRouter("x-ai/grok-code-fast-1"),
+    prompt,
+    tools: {
+      createPosition: {
+        description: 'Open a position in the given market',
+        inputSchema: z.object({
+          symbol: z.enum(MARKET_SYMBOLS).describe('The symbol to open the position at'),
+          side: z.enum(["LONG", "SHORT"]),
+          quantity: z.number().describe('The quantity of the position to open.'),
+        }),
+        execute: async ({ symbol, side, quantity }: { symbol: MarketSymbol; side: "LONG" | "SHORT"; quantity: number }) => {
+          // Do the opposite of what the AI infers
+          const orderSide = side === "LONG" ? "SELL" : "BUY";
+          await binanceClient.placeOrder({ symbol, side: orderSide, type: "MARKET", quantity });
+          return `Position opened successfully for ${quantity} ${symbol}`;
+        },
+      },
+      closeAllPosition: {
+        description: 'Close all the currently open positions',
+        inputSchema: z.object({}),
+        execute: async () => {
+          const positions = await binanceClient.getOpenPositions();
+          const openPositions = positions.filter((pos) => {
+            const amt = Number(pos.positionAmt ?? 0);
+            return Number.isFinite(amt) && amt !== 0;
+          });
 
-  if (chatResponse.message.tool_calls?.length) {
-    const toolMessages: ChatMessage[] = [];
-    for (const call of chatResponse.message.tool_calls) {
-      const result = await executeToolCall(call);
-      toolMessages.push({
-        role: "tool",
-        content: typeof result === "string" ? result : JSON.stringify(result),
-        tool_call_id: call.id ?? call.function.name,
-      });
-    }
-    return;
+          if (!openPositions.length) {
+            return "No open positions to close.";
+          }
+
+          const results = [];
+          for (const pos of openPositions) {
+            const qty = Math.abs(Number(pos.positionAmt ?? 0));
+            if (!Number.isFinite(qty) || qty <= 0) continue;
+            results.push(
+              await binanceClient.closePosition({
+                symbol: pos.symbol,
+                positionSide: pos.positionSide,
+                quantity: qty,
+              }),
+            );
+          }
+
+          return results.length ? results : "No positions closed.";
+        },
+      },
+    },
+  })
+  for await (const textPart of textStream) {
+    process.stdout.write(textPart);
   }
 }
 
@@ -36,10 +78,10 @@ async function mainWithGlobalErrorCatch() {
 }
 
 let timer = 0
-console.log("Running main loop...", timer++);
+console.log("Running main loop...", timer);
 mainWithGlobalErrorCatch();
 
 setInterval(() => {
   console.log("Running main loop...", ++timer);
   mainWithGlobalErrorCatch()
-}, 1000 * 60 * 2); // every 5 minutes
+}, 1000 * 60 * 5); // every 5 minutes

@@ -12,6 +12,7 @@ import {
   type FundingRateParams,
   type KlineParams,
   type ClosePositionParams,
+  type PositionSide,
   type NewOrderRequest,
   type PositionRisk,
   type PositionRiskParams,
@@ -146,6 +147,7 @@ export class BinanceRestClient {
   }
 
   placeOrder(params: NewOrderRequest) {
+    console.log("Placing order with:", { params });
     if (params.type === "LIMIT" && !params.timeInForce) {
       throw new Error("timeInForce is required for LIMIT orders");
     }
@@ -175,54 +177,81 @@ export class BinanceRestClient {
     positionSide,
     recvWindow,
   }: ClosePositionParams): Promise<unknown> {
-    let closeQty = quantity;
-    let side = positionSide === "SHORT" ? "BUY" : "SELL";
-    let effectivePositionSide = positionSide;
+    const normalizedSymbol = symbol.toUpperCase();
+    const positions = await this.getOpenPositions({ symbol: normalizedSymbol, recvWindow });
+    const positionArray = Array.isArray(positions) ? positions : [positions];
 
-    if (closeQty === undefined || effectivePositionSide === undefined) {
-      const positions = await this.getPositionRisk({ symbol, recvWindow });
-      console.log({ positions });
+    const matchBySymbol = (p: any) =>
+      p &&
+      typeof p === "object" &&
+      ((p as any).symbol === normalizedSymbol || (p as any).symbol === symbol);
+    const matchBySide = (p: any) => !positionSide || (p as any)?.positionSide === positionSide;
 
-      const positionArray = Array.isArray(positions) ? positions : [positions];
-      const match = positionArray.find((p: any) => p && typeof p === "object" &&
-        (p.symbol === symbol || p.symbol === symbol.toUpperCase()),
-      );
+    const openPositions = positionArray.filter((p: any) => {
+      if (!matchBySymbol(p) || !matchBySide(p)) return false;
+      const amt = Number((p as any)?.positionAmt ?? 0);
+      return Number.isFinite(amt) && amt !== 0;
+    });
+    if (!openPositions.length) {
+      return { status: "noop", reason: `No open position found for ${normalizedSymbol}` };
+    }
 
-      const posAmt = Number((match as any)?.positionAmt ?? 0);
-      if (!posAmt) {
-        throw new Error(`No open position found for ${symbol}`);
-      }
+    let remainingQty = quantity === undefined ? undefined : Math.abs(Number(quantity));
+    if (remainingQty !== undefined && (!Number.isFinite(remainingQty) || remainingQty <= 0)) {
+      return { status: "noop", reason: `Invalid close quantity for ${normalizedSymbol}` };
+    }
 
-      effectivePositionSide =
-        effectivePositionSide ??
-        (typeof (match as any)?.positionSide === "string"
-          ? (match as any).positionSide
+    const results: unknown[] = [];
+
+    // Flatten any matching positions (handles LONG/SHORT entries when hedge mode is enabled).
+    for (const pos of openPositions) {
+      const posAmt = Number((pos as any)?.positionAmt ?? 0);
+      const absPosSize = Math.abs(posAmt);
+      if (!absPosSize) continue;
+
+      const closeQty = remainingQty === undefined ? absPosSize : Math.min(absPosSize, remainingQty);
+      if (!Number.isFinite(closeQty) || closeQty <= 0) continue;
+
+      const effectivePositionSide: PositionSide =
+        positionSide ??
+        (typeof (pos as any)?.positionSide === "string"
+          ? ((pos as any)?.positionSide as PositionSide)
           : "BOTH");
 
-      if (closeQty === undefined) {
-        closeQty = Math.abs(posAmt);
-      }
+      const side =
+        effectivePositionSide === "SHORT"
+          ? "BUY"
+          : effectivePositionSide === "LONG"
+            ? "SELL"
+            : posAmt > 0
+              ? "SELL"
+              : "BUY";
 
-      if (effectivePositionSide === "BOTH") {
-        side = posAmt > 0 ? "SELL" : "BUY";
-      } else {
-        side = effectivePositionSide === "SHORT" ? "BUY" : "SELL";
+      const orderPayload: NewOrderRequest = {
+        symbol: normalizedSymbol,
+        side,
+        type: "MARKET",
+        quantity: closeQty,
+        reduceOnly: true,
+        ...(effectivePositionSide && effectivePositionSide !== "BOTH"
+          ? { positionSide: effectivePositionSide }
+          : {}),
+        ...(recvWindow ? { recvWindow } : {}),
+      };
+
+      results.push(await this.placeOrder(orderPayload));
+
+      if (remainingQty !== undefined) {
+        remainingQty = Math.max(0, remainingQty - closeQty);
+        if (remainingQty <= 1e-12) break;
       }
     }
 
-    const orderPayload: NewOrderRequest = {
-      symbol,
-      side,
-      type: "MARKET",
-      positionSide: effectivePositionSide,
-      quantity: closeQty!,
-      ...(effectivePositionSide && effectivePositionSide !== "BOTH"
-        ? { positionSide: effectivePositionSide }
-        : {}),
-      ...(recvWindow ? { recvWindow } : {}),
-    };
+    if (!results.length) {
+      return { status: "noop", reason: `Close quantity exhausted for ${normalizedSymbol}` };
+    }
 
-    return this.placeOrder(orderPayload);
+    return results.length === 1 ? results[0] : { status: "ok", orders: results };
   }
 
   /**

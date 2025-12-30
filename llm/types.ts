@@ -2,68 +2,84 @@ export type ChatRole = "system" | "user" | "assistant" | "tool";
 
 export interface ChatMessage {
   role: ChatRole;
-  content: string;
+  content: string | null;
+  name?: string;
   images?: string[];
   tool_call_id?: string;
   tool_calls?: ToolCall[];
 }
 
-export interface OllamaOptions {
+export interface OpenRouterOptions {
   temperature?: number;
   top_p?: number;
-  top_k?: number;
-  num_predict?: number;
+  max_tokens?: number;
   stop?: string[];
+  presence_penalty?: number;
+  frequency_penalty?: number;
 }
 
-export interface OllamaModelConfig {
+export interface OpenRouterModelConfig {
   name: string;
-  options?: OllamaOptions;
+  options?: OpenRouterOptions;
 }
 
-export interface OllamaClientOptions {
+export interface OpenRouterClientOptions {
   baseUrl?: string;
   apiKey?: string;
-  models: Record<string, OllamaModelConfig>;
+  models: Record<string, OpenRouterModelConfig>;
   defaultModel: string;
+  referer?: string;
+  title?: string;
 }
 
 export interface ChatRequest {
   messages: ChatMessage[];
   model?: string;
-  options?: OllamaOptions;
-  tools?: OllamaTool[];
+  options?: OpenRouterOptions;
+  tools?: OpenRouterTool[];
   toolChoice?: ToolChoice;
 }
 
-export interface GenerateRequest {
-  prompt: string;
-  model?: string;
-  options?: OllamaOptions;
+export interface OpenRouterUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
 }
 
-export interface OllamaChatResponse {
-  model: string;
+export interface OpenRouterChatResponseChoice {
+  index: number;
   message: ChatMessage;
-  done: boolean;
+  finish_reason?: string;
 }
 
-export interface OllamaGenerateResponse {
+export interface OpenRouterAPIChatResponse {
+  id: string;
+  object: string;
+  created: number;
   model: string;
-  response: string;
-  done: boolean;
+  choices: OpenRouterChatResponseChoice[];
+  usage?: OpenRouterUsage;
 }
 
-export interface OllamaModelSummary {
-  name: string;
-  modified_at?: string;
-  size?: number;
-  digest?: string;
-  details?: Record<string, unknown>;
+export interface OpenRouterChatResponse {
+  id: string;
+  model: string;
+  created: number;
+  message: ChatMessage;
+  finish_reason?: string;
+  usage?: OpenRouterUsage;
+}
+
+export interface OpenRouterModelSummary {
+  id: string;
+  created?: number;
+  owned_by?: string;
+  object?: string;
 }
 
 export interface ModelListResponse {
-  models: OllamaModelSummary[];
+  data: OpenRouterModelSummary[];
+  object: "list";
 }
 
 export type ToolChoice =
@@ -85,7 +101,7 @@ export interface ToolCall {
   };
 }
 
-export interface OllamaTool {
+export interface OpenRouterTool {
   type: "function";
   function: {
     name: string;

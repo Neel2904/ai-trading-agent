@@ -54,24 +54,23 @@ const socket = wsClient.connect(["btcusdt@bookTicker", "ethusdt@aggTrade"], {
 await client.closePosition({ symbol: "BTCUSDT" });
 ```
 
-## LLM (Ollama) setup
-- Configure `OLLAMA_API_KEY` in `.env` (already present) and optionally `OLLAMA_HOST` to point at your Ollama server; defaults to `http://127.0.0.1:11434`.
-- Default Ollama client lives in `llm/index.ts` and expects a single model name (env `OLLAMA_MODEL`, default `llama3`). Update the env var to the exact model you want to use.
+## LLM (OpenRouter) setup
+- Configure `OPENROUTER_API_KEY` in `.env`. Optionally set `OPENROUTER_BASE_URL` (defaults to `https://openrouter.ai/api/v1`), `OPENROUTER_MODEL` (defaults to `openrouter/auto`), `OPENROUTER_SITE_URL` for the `HTTP-Referer` header, and `OPENROUTER_APP_TITLE` for `X-Title`.
+- Default client lives in `llm/index.ts` and uses the model from `OPENROUTER_MODEL`. The client follows the OpenAI-compatible Chat Completions API, including tool calling support.
 - Basic chat example:
   ```ts
-  import { ollama } from "./llm";
+  import { openrouter } from "./llm";
 
-  const chat = await ollama.chat({
+  const chat = await openrouter.chat({
     messages: [
       { role: "system", content: "You are a trading research assistant." },
       { role: "user", content: "Summarize BTCUSDT market drivers today." },
     ],
   });
 
-  console.log("Full reply:", chat.message.content);
+  console.log("Full reply:", chat.message?.content);
   ```
-- For single prompts, use `ollama.generate({ prompt: "..." })`; list available models with `ollama.listModels()`.
-- Ensure the referenced model is installed locally (`ollama pull llama3`, etc.).
+- List available models with `openrouter.listModels()`; choose a model supported by your OpenRouter account (e.g., `openrouter/auto` or a specific provider/model identifier).
 
 ## Notes
 - Secrets are never logged; avoid committing `.env` or credentials.
