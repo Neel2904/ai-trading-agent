@@ -8,6 +8,11 @@
   "devDependencies": {
     "@types/bun": "latest"
   },
+  "scripts": {
+    "dev": "bun run index.ts",
+    "build": "bun build index.ts --outdir dist",
+    "start": "bun run index.js"
+  },
   "peerDependencies": {
     "typescript": "^5"
   },
