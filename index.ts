@@ -4,6 +4,15 @@ import { binanceClient } from "./src/binanceConfig";
 import z from "zod";
 import { buildFilledPrompt } from "./src/prompt";
 
+
+const express = require('express');
+const app = express();
+const port = 4000
+app.get('/', (req: any, res: any) => {
+  res.send('Hello World!')
+})
+
+
 globalThis.AI_SDK_LOG_WARNINGS = false;
 export const MARKET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"] as const;
 type MarketSymbol = (typeof MARKET_SYMBOLS)[number];
