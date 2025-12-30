@@ -11,7 +11,9 @@ const port = 4000
 app.get('/', (req: any, res: any) => {
   res.send('Hello World!')
 })
-
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server listening to port ${port}`);
+});
 
 globalThis.AI_SDK_LOG_WARNINGS = false;
 export const MARKET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"] as const;
