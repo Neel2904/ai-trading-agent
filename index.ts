@@ -11,9 +11,7 @@ const port = 4000
 app.get('/', (req: any, res: any) => {
   res.send('Hello World!')
 })
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Server listening to port ${port}`);
-});
+app.listen(port, "0.0.0.0", () => { });
 
 globalThis.AI_SDK_LOG_WARNINGS = false;
 export const MARKET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"] as const;
@@ -75,9 +73,7 @@ async function main() {
       },
     },
   })
-  for await (const textPart of textStream) {
-    process.stdout.write(textPart);
-  }
+  console.log("Response has been recieved and is being processed...");
 }
 
 async function mainWithGlobalErrorCatch() {
