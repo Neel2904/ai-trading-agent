@@ -15,7 +15,7 @@ app.listen(port, "0.0.0.0", () => { });
 
 globalThis.AI_SDK_LOG_WARNINGS = false;
 export const MARKET_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"] as const;
-type MarketSymbol = (typeof MARKET_SYMBOLS)[number];
+export type MarketSymbol = (typeof MARKET_SYMBOLS)[number];
 
 async function main() {
   const openRouter = createOpenRouter({
@@ -23,8 +23,8 @@ async function main() {
   })
 
   const prompt = await buildFilledPrompt();
-  const { textStream } = streamText({
-    model: openRouter("x-ai/grok-code-fast-1"),
+  streamText({
+    model: openRouter("x-ai/grok-4.1-fast"),
     prompt,
     tools: {
       createPosition: {
@@ -41,7 +41,7 @@ async function main() {
           return `Position opened successfully for ${quantity} ${symbol}`;
         },
       },
-      closeAllPosition: {
+      closeAllPositions: {
         description: 'Close all the currently open positions',
         inputSchema: z.object({}),
         execute: async () => {

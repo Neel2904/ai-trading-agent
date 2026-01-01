@@ -1,5 +1,6 @@
 // @params{period} - The period for which the EMA is being calculated
 
+import type { MarketSymbol } from "..";
 import type { RawCandlestick } from "../binance-sdk";
 import { binanceClient } from "./binanceConfig";
 import { getOpenClose } from "./utils";
@@ -41,11 +42,11 @@ export function getMacd(prices: number[]) {
   return macd
 }
 
-export const getIndicators = async (duration: "1m" | "5m" | "4h") => {
+export const getIndicators = async (interval: "1m" | "5m" | "4h", symbol: MarketSymbol) => {
   const klines = await binanceClient.getKlines({
-    symbol: "BTCUSDT",
-    interval: duration,
-    limit: duration === "1m" ? 120 : 40,
+    symbol,
+    interval,
+    limit: interval === "1m" ? 120 : 40,
   })
 
   const midPrices = getMidPrices(klines);
